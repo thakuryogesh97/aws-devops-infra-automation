@@ -1,0 +1,78 @@
+---
+- name: Install and Configure Node Exporter on all servers
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Download Node Exporter package
+      get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.5.0/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /tmp/node_exporter-1.5.0.linux-amd64.tar.gz
+
+    - name: Extract Node Exporter tar file
+      unarchive:
+        src: /tmp/node_exporter-1.5.0.linux-amd64.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Move Node Exporter binary to /usr/local/bin
+      command: mv /tmp/node_exporter-1.5.0.linux-amd64/node_exporter /usr/local/bin/
+      args:
+        removes: /tmp/node_exporter-1.5.0.linux-amd64/node_exporter
+
+    - name: Remove extracted folder and tar file
+      file:
+        path: "/tmp/node_exporter-1.5.0.linux-amd64.tar.gz"
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Node Exporter folder if exists
+      file:
+        path: "/tmp/node_exporter-1.5.0.linux-amd64"
+        state: absent
+      ignore_errors: yes
+
+    - name: Create node_exporter user
+      user:
+        name: node_exporter
+        shell: /bin/false
+        system: yes
+
+    - name: Create systemd service for Node Exporter
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User=node_exporter
+          Group=node_exporter
+          Type=simple
+          ExecStart=/usr/local/bin/node_exporter
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd to apply Node Exporter service
+      command: systemctl daemon-reload
+
+    - name: Enable Node Exporter service
+      systemd:
+        name: node_exporter
+        enabled: yes
+
+    - name: Start Node Exporter service
+      systemd:
+        name: node_exporter
+        state: started
+
+    - name: Verify Node Exporter service status
+      command: systemctl status node_exporter.service --no-pager
+      register: service_status
+      changed_when: false
+
+    - debug:
+        var: service_status.stdout
+
