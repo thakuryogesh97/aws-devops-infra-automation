@@ -1,7 +1,9 @@
 [Dev]
-
+172.31.25.194 
 [Test]
-
+172.31.26.212 
 [Monitore]
-
+172.31.25.170 
+[control]
+localhost ansible_connection=local
 
