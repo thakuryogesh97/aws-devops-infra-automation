@@ -14,7 +14,7 @@ resource "aws_instance" "one" {
 }
 
 variable "instance_names" {
-  default = ["jenkins", "tomcat-1", "tomcat-2", "Monitoring server"]
+  default = ["control-node", "Dev-1", "test-2", "Monitoring server"]
 }
 
 resource "aws_s3_bucket" "artifact_bucket" {
